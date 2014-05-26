@@ -14,6 +14,11 @@ Backend
 * backend.py
 * signaler.py
 
+Diagram
+-------
+
+![Diagram](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/frontend-backend-zmq-test.png)
+
 Instructions
 ------------
 Run in different consoles:
