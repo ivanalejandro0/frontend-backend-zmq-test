@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import sys
 import signal
 
@@ -17,7 +16,7 @@ from backend_proxy import BackendProxy
 from signaler_qt import SignalerQt
 
 
-class DemoClass(QtGui.QWidget):
+class DemoWidget(QtGui.QWidget):
     """
     Demo class that creates a GUI with some buttons to do some test
     communication with the backend.
@@ -25,31 +24,46 @@ class DemoClass(QtGui.QWidget):
     def __init__(self):
         QtGui.QWidget.__init__(self)
 
-        # create needed objects and make connections
         self._backend_proxy = BackendProxy()
-        self._signaler_qt = SignalerQt()
-        self._signaler_qt.api_call_ok.connect(self._api_call_ok)
-        self._signaler_qt.invalid_api_call.connect(self._api_call_error)
 
         self.init_gui()
+        self._setup_signaler()
+
+    def _setup_signaler(self):
+        """
+        Setup the SignalerQt instance to use, connect to signals and run
+        blocking loop in a thread.
+        """
+        self._signaler_qt = SignalerQt()
+
+        # Connect signals
+        self._signaler_qt.test_signal_1.connect(self._on_test_signal_1)
+        self._signaler_qt.test_signal_2.connect(self._on_test_signal_2)
+        self._signaler_qt.test_signal_3.connect(self._on_test_signal_3)
 
         # run the signaler server in a thread since has a blocking loop
         threads.deferToThread(self._signaler_qt.run)
 
     def init_gui(self):
+        """
+        Initializes a minimal working GUI to interact with.
+        """
         # create buttons
         pb_test1 = QtGui.QPushButton('Test 1')
         pb_test2 = QtGui.QPushButton('Test 2')
+        pb_test3 = QtGui.QPushButton('Ask some data')
 
         # connect buttons with demo actions
-        pb_test1.clicked.connect(self.test)
-        pb_test2.clicked.connect(self.demo)
+        pb_test1.clicked.connect(self.test1)
+        pb_test2.clicked.connect(self.test2)
+        pb_test3.clicked.connect(self.test3)
 
         # define layout
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch(1)
         hbox.addWidget(pb_test1)
         hbox.addWidget(pb_test2)
+        hbox.addWidget(pb_test3)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addStretch(1)
@@ -63,24 +77,35 @@ class DemoClass(QtGui.QWidget):
 
         self.show()
 
-    def test(self):
-        logger.debug("calling: test_api_call")
-        self._backend_proxy.test_api_call()
+    def test1(self):
+        logger.debug("calling: test_method_1")
+        self._backend_proxy.test_method_1()
 
-    def demo(self):
-        logger.debug("calling: demo_api_call")
-        self._backend_proxy.call('demo_api_call-')
+    def test2(self):
+        logger.debug("calling: test_method_2")
+        self._backend_proxy.test_method_2()
 
-    def _api_call_ok(self):
-        QtGui.QMessageBox.information(self, "Information", 'API call OK.')
+    def test3(self):
+        logger.debug("calling: ask_some_data")
+        self._backend_proxy.ask_some_data()
 
-    def _api_call_error(self):
-        QtGui.QMessageBox.critical(self, "Error", 'Invalid API call.')
+    def _on_test_signal_1(self):
+        QtGui.QMessageBox.information(
+            self, "Information", 'TEST_SIGNAL_1 received.')
+
+    def _on_test_signal_2(self):
+        QtGui.QMessageBox.information(
+            self, "Information", 'TEST_SIGNAL_2 received.')
+
+    def _on_test_signal_3(self, data):
+        QtGui.QMessageBox.information(
+            self, "Information",
+            'TEST_SIGNAL_3 received.\nData: {0}'.format(data))
 
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    demo = DemoClass()
+    demo = DemoWidget()
 
     # Ensure that the application quits using CTRL-C
     signal.signal(signal.SIGINT, signal.SIG_DFL)

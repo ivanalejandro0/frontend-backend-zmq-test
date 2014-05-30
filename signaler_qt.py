@@ -1,7 +1,10 @@
+#!/usr/bin/env python
+# encoding: utf-8
 import zmq
 
 from PySide import QtCore
 
+from api import SIGNALS
 from utils import get_log_handler
 logger = get_log_handler(__name__)
 
@@ -14,12 +17,17 @@ class SignalerQt(QtCore.QObject):
     PORT = "5667"
     BIND_ADDR = "tcp://*:%s" % PORT
 
+    ###########################################################################
     # List of possible Qt signals to emit:
-    api_call_ok = QtCore.Signal()
-    invalid_api_call = QtCore.Signal()
+    test_signal_1 = QtCore.Signal()
+    test_signal_2 = QtCore.Signal()
+    test_signal_3 = QtCore.Signal(object)
+    # end list of possible Qt signals to emit.
+    ###########################################################################
 
     def __init__(self):
         QtCore.QObject.__init__(self)
+        self._stop = False
 
     def run(self):
         """
@@ -30,23 +38,49 @@ class SignalerQt(QtCore.QObject):
         socket = context.socket(zmq.REP)
         socket.bind(self.BIND_ADDR)
 
-        while True:
-            #  Wait for next request from client
-            message = socket.recv()
-            logger.debug("Received request: '{0}'".format(message))
-            self._parse_signal(message)
+        while not self._stop:
+            # Wait for next request from client
+            request = socket.recv()
+            logger.debug("Received request: '{0}'".format(request))
+            self._process_request(request)
             socket.send("OK")
 
-    def _parse_signal(self, signal):
+    def stop(self):
         """
-        Parse the signal and emit a Qt signal if needed.
+        Stop the SignalerQt blocking loop.
+        """
+        self._stop = True
 
-        :param signal: the signal to parse.
-        :type signal: str
+    def _process_request(self, request_json):
         """
-        if signal == 'API_CALL_OK':
-            self.api_call_ok.emit()
-        if signal == 'INVALID_API_CALL':
-            self.invalid_api_call.emit()
+        Process a request and call the according method with the given
+        parameters.
+
+        :param request_json: a json specification of a request.
+        :type request_json: str
+        """
+        try:
+            request = zmq.utils.jsonapi.loads(request_json)
+            signal = request['signal']
+            data = request['data']
+        except Exception:
+            msg = "Malformed JSON data in Signaler request '{0}'"
+            msg = msg.format(request_json)
+            logger.critical(msg)
+            raise
+
+        if signal not in SIGNALS:
+            logger.error("Unknown signal received, '{0}'".format(signal))
+            return
+
+        try:
+            qt_signal = getattr(self, signal)
+        except Exception:
+            logger.warning("Signal not implemented, '{0}'".format(signal))
+            return
+
+        logger.debug("Emitting '{0}'".format(signal))
+        if not data:
+            qt_signal.emit()
         else:
-            logger.error("Unknown signal: '{0}'".format(signal))
+            qt_signal.emit(data)

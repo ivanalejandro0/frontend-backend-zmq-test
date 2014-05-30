@@ -1,5 +1,8 @@
+#!/usr/bin/env python
+# encoding: utf-8
 import zmq
 
+from api import SIGNALS
 from utils import get_log_handler
 logger = get_log_handler(__name__)
 
@@ -12,9 +15,6 @@ class Signaler(object):
     PORT = "5667"
     SERVER = "tcp://localhost:%s" % PORT
 
-    api_call_ok = 'API_CALL_OK'
-    invalid_api_call = 'INVALID_API_CALL'
-
     def __init__(self):
         """
         Initialize the ZMQ socket to talk to the signaling server.
@@ -25,17 +25,51 @@ class Signaler(object):
         socket.connect(self.SERVER)
         self._socket = socket
 
-    def signal(self, signal):
+    def __getattribute__(self, name):
+        """
+        This allows the user to do:
+            S = Signaler()
+            S.SOME_SIGNAL
+
+        Just by having defined 'some_signal' in _SIGNALS
+
+        :param name: the attribute name that is requested.
+        :type name: str
+        """
+        if name in SIGNALS:
+            return name
+        else:
+            return object.__getattribute__(self, name)
+
+    def signal(self, signal, data=None):
         """
         Sends a signal to the signaling server.
 
         :param signal: the signal to send.
         :type signal: str
         """
-        logger.debug("Signaling '{0}'".format(signal))
-        self._socket.send(signal)
+        if signal not in SIGNALS:
+            raise Exception("Unknown signal: '{0}'".format(signal))
 
-        #  Get the reply.
+        request = {
+            'signal': signal,
+            'data': data,
+        }
+
+        try:
+            request_json = zmq.utils.jsonapi.dumps(request)
+        except Exception as e:
+            msg = ("Error serializing request into JSON.\n"
+                   "Exception: {0} Data: {1}")
+            msg = msg.format(e, request)
+            logger.critical(msg)
+            raise
+
+        logger.debug("Signaling '{0}'".format(request_json))
+        self._socket.send(request_json)
+
+        # Get the reply.
         response = self._socket.recv()
-        msg = "Received reply for '{0}' -> '{1}'".format(signal, response)
+        msg = "Received reply for '{0}' -> '{1}'".format(request_json,
+                                                         response)
         logger.debug(msg)

@@ -1,17 +1,21 @@
+#!/usr/bin/env python
+# encoding: utf-8
+import functools
+
 import zmq
 
+from api import API
 from utils import get_log_handler
 logger = get_log_handler(__name__)
 
 
 class BackendProxy(object):
-    """Docstring for BackendProxy. """
+    """
+    The BackendProxy handles calls from the GUI and forwards (through ZMQ)
+    to the backend.
+    """
     PORT = '5556'
-
-    API = (
-        'test_api_call',
-        'demo_api_call',
-    )
+    SERVER = "tcp://localhost:%s" % PORT
 
     def __init__(self):
         self._socket = None
@@ -20,29 +24,55 @@ class BackendProxy(object):
         context = zmq.Context()
         logger.debug("Connecting to server...")
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:%s" % self.PORT)
+        socket.connect(self.SERVER)
         self._socket = socket
 
-    def call(self, name):
+    def _api_call(self, **kwargs):
         """
-        Call the `name` method in backend (through zmq) or fail if the method
-        name does not exist in the API.
+        Call the `api_method` method in backend (through zmq).
 
-        :param name: the name of the method to call.
-        :type name: str
+        :param kwargs: named arguments to forward to the backend api method.
+        :type kwargs: dict
         """
-        # if name not in self.API:
-        #     raise Exception("Call to undefined API method.")
-        # else:
-        request = name
-        msg = "Sending request '{0}'...".format(request)
-        logger.debug(msg)
-        self._socket.send(request)
+        api_method = kwargs.pop('api_method', None)
+        if api_method is None:
+            raise Exception("Missing argument, no method name specified.")
 
-        #  Get the reply.
+        request = {
+            'api_method': api_method,
+            'arguments': kwargs,
+        }
+
+        try:
+            request_json = zmq.utils.jsonapi.dumps(request)
+        except Exception as e:
+            msg = ("Error serializing request into JSON.\n"
+                   "Exception: {0} Data: {1}")
+            msg = msg.format(e, request)
+            logger.critical(msg)
+            raise
+
+        logger.debug("Sending request to backend: {0}".format(request_json))
+        self._socket.send(request_json)
+
+        # Get the reply.
+        # TODO: handle this in a non-blocking way.
         response = self._socket.recv()
         msg = "Received reply for '{0}' -> '{1}'".format(request, response)
         logger.debug(msg)
 
-    def test_api_call(self):
-        self.call('test_api_call')
+    def __getattribute__(self, name):
+        """
+        This allows the user to do:
+            bp = BackendProxy()
+            bp.some_method()
+
+        Just by having defined 'some_method' in the API
+
+        :param name: the attribute name that is requested.
+        :type name: str
+        """
+        if name in API:
+            return functools.partial(self._api_call, api_method=name)
+        else:
+            return object.__getattribute__(self, name)
