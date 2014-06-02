@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import Queue
+
+from twisted.internet import reactor, threads
+from twisted.internet.task import LoopingCall
+
 import zmq
 
 from signaler import Signaler
@@ -24,10 +29,11 @@ class Backend(object):
         self._signaler = Signaler()
         self._running = False
 
-    def run(self):
-        """
-        Start the ZMQ server and run the blocking loop to handle requests.
-        """
+        self._ongoing_defers = []
+        self._call_queue = Queue.Queue()
+        self._worker = LoopingCall(self._process_queue)
+
+    def _start_zmq_loop(self):
         logger.debug("Starting ZMQ loop...")
         # ZMQ stuff
         context = zmq.Context()
@@ -42,11 +48,25 @@ class Backend(object):
             socket.send("OK")
             self._process_request(request)
 
+    def run(self):
+        """
+        Start the ZMQ server and run the blocking loop to handle requests.
+        """
+        threads.deferToThread(self._start_zmq_loop)
+
+        logger.debug("Starting queue processor...")
+        self._worker.start(0.01)
+
+        reactor.run()
+
     def stop(self):
         """
         Stop the server and request parsing loop.
         """
         self._running = False
+
+        if self._worker.running:
+            self._worker.stop()
 
     def _process_request(self, request_json):
         """
@@ -59,7 +79,7 @@ class Backend(object):
         try:
             request = zmq.utils.jsonapi.loads(request_json)
             api_method = request['api_method']
-            args = request['arguments']
+            kwargs = request['arguments']
         except Exception:
             msg = "Malformed JSON data in Backend request '{0}'"
             msg = msg.format(request_json)
@@ -73,12 +93,50 @@ class Backend(object):
 
         logger.debug("Calling '{0}'".format(api_method))
         method = getattr(self, api_method)
-        if args:
-            # TODO: this should queue the call in a thread or something, that
-            # way we don't block until the control is returned to this place.
-            method(args)
+        if kwargs:
+            method(kwargs)
         else:
             method()
+
+    def _process_queue(self):
+        """
+        Process the call queue and run waiting operations in a thread to avoid
+        blocking.
+
+        Each item of the queue is a tuple with:
+            [0] callable name
+            [1] dict with arguments to forward to the callable
+        """
+        try:
+            item = self._call_queue.get(block=False)
+            logger.debug("Queue item: {0}".format(item))
+            func = getattr(self, item[0])
+            kwargs = item[1]
+
+            # run the action in a thread and keep track of it
+            method = lambda: func(**kwargs)
+            d = threads.deferToThread(method)
+            d.addCallback(self._done_action, d)
+            d.addErrback(self._done_action, d, error=True)
+            self._ongoing_defers.append(d)
+        except Queue.Empty:
+            # If it's just empty we don't have anything to do.
+            pass
+        except Exception as e:
+            logger.exception("Unexpected exception: {0!r}".format(e))
+
+    def _done_action(self, _, d, error=False):
+        """
+        Remove the defer from the ongoing list.
+
+        :param d: defer to remove
+        :type d: twisted.internet.defer.Deferred
+        """
+        if error:
+            logger.error("errback triggered in action")
+
+        if d in self._ongoing_defers:
+            self._ongoing_defers.remove(d)
 
     ###########################################################################
     # List of possible methods to use, we MUST implement ALL the API methods.
@@ -94,6 +152,22 @@ class Backend(object):
 
     def ask_some_data(self):
         self._signaler.signal(self._signaler.test_signal_3, 'Lorem Data')
+
+    def _blocking_method(self, data, delay):
+        logger.debug("blocking method start")
+        logger.debug("data: {0} - delay:{1}".format(data, delay))
+        import time
+        # time.sleep(1)
+        time.sleep(delay)
+        logger.debug("blocking method end")
+        self._signaler.signal(self._signaler.sig_blocking_method)
+
+    def blocking_method(self, data):
+        """
+        :param data: dict of parameters needed by _blocking_method.
+        :type data: dict.
+        """
+        self._call_queue.put(('_blocking_method', data))
 
 
 def run_backend():
