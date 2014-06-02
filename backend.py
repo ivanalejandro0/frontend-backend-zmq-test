@@ -111,13 +111,16 @@ class Backend(object):
             item = self._call_queue.get(block=False)
             logger.debug("Queue item: {0}".format(item))
             func = getattr(self, item[0])
-            kwargs = item[1]
+
+            method = func
+            if len(item) > 1:
+                kwargs = item[1]
+                method = lambda: func(**kwargs)
 
             # run the action in a thread and keep track of it
-            method = lambda: func(**kwargs)
             d = threads.deferToThread(method)
             d.addCallback(self._done_action, d)
-            d.addErrback(self._done_action, d, error=True)
+            d.addErrback(self._done_action, d)
             self._ongoing_defers.append(d)
         except Queue.Empty:
             # If it's just empty we don't have anything to do.
@@ -125,15 +128,19 @@ class Backend(object):
         except Exception as e:
             logger.exception("Unexpected exception: {0!r}".format(e))
 
-    def _done_action(self, _, d, error=False):
+    def _done_action(self, failure, d):
         """
         Remove the defer from the ongoing list.
 
+        :param failure: the failure that triggered the errback.
+                        None if no error.
+        :type failure: twisted.python.failure.Failure
         :param d: defer to remove
         :type d: twisted.internet.defer.Deferred
         """
-        if error:
-            logger.error("errback triggered in action")
+        if failure is not None:
+            logger.error("There was a failure - {0!r}".format(failure))
+            logger.error(failure.getTraceback())
 
         if d in self._ongoing_defers:
             self._ongoing_defers.remove(d)
