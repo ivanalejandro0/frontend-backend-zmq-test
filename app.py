@@ -32,14 +32,13 @@ class DemoWidget(QtGui.QWidget):
         Setup the SignalerQt instance to use, connect to signals and run
         blocking loop in a thread.
         """
-        self._signaler_qt = SignalerQt()
+        self._signaler_qt = signaler = SignalerQt()
 
         # Connect signals
-        self._signaler_qt.test_signal_1.connect(self._on_test_signal_1)
-        self._signaler_qt.test_signal_2.connect(self._on_test_signal_2)
-        self._signaler_qt.test_signal_3.connect(self._on_test_signal_3)
-        self._signaler_qt.sig_blocking_method.connect(
-            self._on_sig_blocking_method)
+        signaler.add_result.connect(self._on_add_result)
+        signaler.reset_ok.connect(self._on_reset_ok)
+        signaler.stored_data.connect(self._on_stored_data)
+        signaler.blocking_method_ok.connect(self._on_blocking_method_ok)
 
         # we run the signaler server in a thread since has a blocking loop
         self._signaler_qt.start()
@@ -49,16 +48,16 @@ class DemoWidget(QtGui.QWidget):
         Initializes a minimal working GUI to interact with.
         """
         # create buttons
-        pb_test1 = QtGui.QPushButton('Test 1')
-        pb_test2 = QtGui.QPushButton('Test 2')
-        pb_test3 = QtGui.QPushButton('Ask some data')
+        pb_test1 = QtGui.QPushButton('Reset calculator')
+        pb_test2 = QtGui.QPushButton('Add 2+2')
+        pb_test3 = QtGui.QPushButton('Giveme stored data')
         pb_test4 = QtGui.QPushButton('Blocking method')
 
         # connect buttons with demo actions
-        pb_test1.clicked.connect(self.test1)
-        pb_test2.clicked.connect(self.test2)
-        pb_test3.clicked.connect(self.test3)
-        pb_test4.clicked.connect(self.test4)
+        pb_test1.clicked.connect(self._reset)
+        pb_test2.clicked.connect(self._add)
+        pb_test3.clicked.connect(self._get_data)
+        pb_test4.clicked.connect(self._block_call)
 
         # define layout
         hbox = QtGui.QHBoxLayout()
@@ -78,38 +77,45 @@ class DemoWidget(QtGui.QWidget):
         self.setGeometry(300, 300, 250, 150)
         self.setWindowTitle('Test window')
 
-    def test1(self):
-        logger.debug("calling: test_method_1")
-        self._backend_proxy.test_method_1()
+    ####################
+    # Backend calls, on buttons clicked
 
-    def test2(self):
-        logger.debug("calling: test_method_2")
-        self._backend_proxy.test_method_2()
+    def _reset(self):
+        logger.debug("calling: reset")
+        self._backend_proxy.reset()
 
-    def test3(self):
-        logger.debug("calling: ask_some_data")
-        self._backend_proxy.ask_some_data()
+    def _add(self):
+        logger.debug("calling: add(2, 2)")
+        self._backend_proxy.add(a=2, b=2)
 
-    def test4(self):
+    def _get_data(self):
+        logger.debug("calling: get_stored_data")
+        self._backend_proxy.get_stored_data()
+
+    def _block_call(self):
         logger.debug("calling: blocking_method")
         self._backend_proxy.blocking_method(data='blah', delay=5)
 
-    def _on_test_signal_1(self):
-        QtGui.QMessageBox.information(
-            self, "Information", 'TEST_SIGNAL_1 received.')
+    ####################
+    # Backend signals handlers
 
-    def _on_test_signal_2(self):
-        QtGui.QMessageBox.information(
-            self, "Information", 'TEST_SIGNAL_2 received.')
-
-    def _on_test_signal_3(self, data):
+    def _on_add_result(self, data):
         QtGui.QMessageBox.information(
             self, "Information",
-            'TEST_SIGNAL_3 received.\nData: {0}'.format(data))
+            'add_result received.\nData: {0}'.format(data))
 
-    def _on_sig_blocking_method(self):
+    def _on_reset_ok(self):
         QtGui.QMessageBox.information(
-            self, "Information", 'sig_blocking_method received.')
+            self, "Information", 'reset_ok received.')
+
+    def _on_stored_data(self, data):
+        QtGui.QMessageBox.information(
+            self, "Information",
+            'stored_data received.\nData: {0}'.format(data))
+
+    def _on_blocking_method_ok(self):
+        QtGui.QMessageBox.information(
+            self, "Information", 'blocking_method_ok received.')
 
 
 def run_app(should_run_backend=False):

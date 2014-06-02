@@ -150,24 +150,65 @@ class Backend(object):
     # Otherwise, the call will be considered as valid in the backend_proxy and
     # will fail in here, while trying to run it.
 
-    def test_method_1(self):
-        self._signaler.signal(self._signaler.test_signal_1)
+    def _reset(self):
+        """
+        Signal a reset_ok signal.
+        """
+        self._signaler.signal(self._signaler.reset_ok)
 
-    def test_method_2(self):
-        self._signaler.signal(self._signaler.test_signal_2)
-        self._signaler.signal(self._signaler.test_signal_4)
+    def reset(self):
+        """
+        Test the signaling system with a simple request/reply.
+        """
+        self._call_queue.put(('_reset', ))
 
-    def ask_some_data(self):
-        self._signaler.signal(self._signaler.test_signal_3, 'Lorem Data')
+    def _add(self, a, b):
+        """
+        This adds two parameters and signals the result.
+
+        :param a: first operand
+        :type a: int
+        :param b: second operand
+        :type b: int
+        """
+        self._signaler.signal(self._signaler.add_result, a+b)
+
+    def add(self, data):
+        """
+        This adds two parameters and signals the result.
+
+        :param data: dict of parameters needed by _add.
+        :type data: dict.
+        """
+        self._call_queue.put(('_add', data))
+
+    def _get_stored_data(self):
+        """
+        Signal back some test data.
+        """
+        self._signaler.signal(self._signaler.stored_data, 'Lorem Data')
+
+    def get_stored_data(self):
+        """
+        Signal back some test data.
+        """
+        self._call_queue.put(('_get_stored_data', ))
 
     def _blocking_method(self, data, delay):
+        """
+        This method blocks for `delay` seconds.
+
+        :param data: some data
+        :type data: str
+        :param delay: this indicates how much time we need to wait until return
+        :type delay: int
+        """
         logger.debug("blocking method start")
         logger.debug("data: {0} - delay:{1}".format(data, delay))
         import time
-        # time.sleep(1)
         time.sleep(delay)
         logger.debug("blocking method end")
-        self._signaler.signal(self._signaler.sig_blocking_method)
+        self._signaler.signal(self._signaler.blocking_method_ok)
 
     def blocking_method(self, data):
         """

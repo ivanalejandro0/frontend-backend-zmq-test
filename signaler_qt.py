@@ -19,10 +19,10 @@ class SignalerQt(QtCore.QThread):
 
     ###########################################################################
     # List of possible Qt signals to emit:
-    test_signal_1 = QtCore.Signal()
-    test_signal_2 = QtCore.Signal()
-    test_signal_3 = QtCore.Signal(object)
-    sig_blocking_method = QtCore.Signal()
+    add_result = QtCore.Signal(object)
+    reset_ok = QtCore.Signal()
+    stored_data = QtCore.Signal(object)
+    blocking_method_ok = QtCore.Signal()
     # end list of possible Qt signals to emit.
     ###########################################################################
 
