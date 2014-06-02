@@ -96,6 +96,10 @@ class Backend(object):
         self._signaler.signal(self._signaler.test_signal_3, 'Lorem Data')
 
 
-if __name__ == '__main__':
+def run_backend():
     backend = Backend()
     backend.run()
+
+
+if __name__ == '__main__':
+    run_backend()

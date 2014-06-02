@@ -37,6 +37,9 @@ Files explanation
 <dl>
   <dt>api.py</dt>
   <dd>Definition of available API and SIGNALS in the backend.</dd>
+
+  <dt>runme.py</dt>
+  <dd>Helper app to run the GUI and the Backend in different process.</dd>
 </dl>
 
 ### Utilities:
@@ -60,10 +63,20 @@ Diagram
 
 Instructions
 ------------
-Run in different consoles:
+You can run the `app.py` file that uses a separate process for the backend:
 
     python app.py
+
+
+You can run in the GUI and the Backend in different consoles:
+
+    python app.py --no-backend
     python backend.py
+
+
+Or you can use the `runme.py` helper that uses a process for the GUI and other process for the Backend:
+
+    python runme.py
 
 
 Requirements

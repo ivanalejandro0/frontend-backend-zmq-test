@@ -42,8 +42,8 @@ class SignalerQt(QtCore.QObject):
             # Wait for next request from client
             request = socket.recv()
             logger.debug("Received request: '{0}'".format(request))
-            self._process_request(request)
             socket.send("OK")
+            self._process_request(request)
 
     def stop(self):
         """
