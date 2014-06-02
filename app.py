@@ -3,10 +3,7 @@
 import sys
 import signal
 
-from twisted.internet import reactor, threads
-from twisted.internet.task import LoopingCall
-
-from PySide import QtCore, QtGui
+from PySide import QtGui
 
 # do this import after *any* other custom import so the logger gets set.
 from utils import get_log_handler
@@ -42,8 +39,8 @@ class DemoWidget(QtGui.QWidget):
         self._signaler_qt.test_signal_2.connect(self._on_test_signal_2)
         self._signaler_qt.test_signal_3.connect(self._on_test_signal_3)
 
-        # run the signaler server in a thread since has a blocking loop
-        threads.deferToThread(self._signaler_qt.run)
+        # we run the signaler server in a thread since has a blocking loop
+        self._signaler_qt.start()
 
     def init_gui(self):
         """
@@ -122,11 +119,7 @@ def run_app(should_run_backend=False):
         backend_process = multiprocessing.Process(target=run_backend)
         backend_process.start()
 
-    # using twisted's reactor to call the Qt's event processor since we are
-    # not using the Qt reactor.
-    l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
-    l.start(0.01)
-    reactor.run()
+    sys.exit(app.exec_())
 
 
 if __name__ == '__main__':

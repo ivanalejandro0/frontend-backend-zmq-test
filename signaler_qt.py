@@ -9,7 +9,7 @@ from utils import get_log_handler
 logger = get_log_handler(__name__)
 
 
-class SignalerQt(QtCore.QObject):
+class SignalerQt(QtCore.QThread):
     """
     Signaling server.
     Receives signals from the signaling client and emit Qt signals for the GUI.
@@ -26,7 +26,7 @@ class SignalerQt(QtCore.QObject):
     ###########################################################################
 
     def __init__(self):
-        QtCore.QObject.__init__(self)
+        QtCore.QThread.__init__(self)
         self._stop = False
 
     def run(self):
