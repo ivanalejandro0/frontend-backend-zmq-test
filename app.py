@@ -54,10 +54,10 @@ class DemoWidget(QtGui.QWidget):
         pb_test4 = QtGui.QPushButton('Blocking method')
 
         # connect buttons with demo actions
-        pb_test1.clicked.connect(self._reset)
-        pb_test2.clicked.connect(self._add)
-        pb_test3.clicked.connect(self._get_data)
-        pb_test4.clicked.connect(self._block_call)
+        pb_test1.clicked.connect(self._call_reset)
+        pb_test2.clicked.connect(self._call_add)
+        pb_test3.clicked.connect(self._call_get_data)
+        pb_test4.clicked.connect(self._call_block_call)
 
         # define layout
         hbox = QtGui.QHBoxLayout()
@@ -80,19 +80,19 @@ class DemoWidget(QtGui.QWidget):
     ####################
     # Backend calls, on buttons clicked
 
-    def _reset(self):
+    def _call_reset(self):
         logger.debug("calling: reset")
         self._backend_proxy.reset()
 
-    def _add(self):
+    def _call_add(self):
         logger.debug("calling: add(2, 2)")
         self._backend_proxy.add(a=2, b=2)
 
-    def _get_data(self):
+    def _call_get_data(self):
         logger.debug("calling: get_stored_data")
         self._backend_proxy.get_stored_data()
 
-    def _block_call(self):
+    def _call_block_call(self):
         logger.debug("calling: blocking_method")
         self._backend_proxy.blocking_method(data='blah', delay=5)
 
