@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import Queue
-
 from twisted.internet import reactor, threads
-from twisted.internet.task import LoopingCall
 
 import zmq
 
@@ -30,8 +27,6 @@ class Backend(object):
         self._running = False
 
         self._ongoing_defers = []
-        self._call_queue = Queue.Queue()
-        self._worker = LoopingCall(self._process_queue)
 
     def _start_zmq_loop(self):
         logger.debug("Starting ZMQ loop...")
@@ -53,10 +48,6 @@ class Backend(object):
         Start the ZMQ server and run the blocking loop to handle requests.
         """
         threads.deferToThread(self._start_zmq_loop)
-
-        logger.debug("Starting queue processor...")
-        self._worker.start(0.01)
-
         reactor.run()
 
     def stop(self):
@@ -64,9 +55,6 @@ class Backend(object):
         Stop the server and request parsing loop.
         """
         self._running = False
-
-        if self._worker.running:
-            self._worker.stop()
 
     def _process_request(self, request_json):
         """
@@ -79,7 +67,7 @@ class Backend(object):
         try:
             request = zmq.utils.jsonapi.loads(request_json)
             api_method = request['api_method']
-            kwargs = request['arguments']
+            kwargs = request['arguments'] or None
         except Exception:
             msg = "Malformed JSON data in Backend request '{0}'"
             msg = msg.format(request_json)
@@ -91,42 +79,29 @@ class Backend(object):
             logger.error("Invalid API call '{0}'".format(api_method))
             return
 
-        logger.debug("Calling '{0}'".format(api_method))
-        method = getattr(self, api_method)
-        if kwargs:
-            method(kwargs)
-        else:
-            method()
+        self._run_in_thread((api_method, kwargs))
 
-    def _process_queue(self):
+    def _run_in_thread(self, cmd):
         """
-        Process the call queue and run waiting operations in a thread to avoid
-        blocking.
+        Run the method name in a thread with the given arguments.
 
-        Each item of the queue is a tuple with:
-            [0] callable name
-            [1] dict with arguments to forward to the callable
+        :param cmd: a tuple containing (method, arguments)
+        :type cmd: tuple (str, dict or None)
         """
-        try:
-            item = self._call_queue.get(block=False)
-            logger.debug("Queue item: {0}".format(item))
-            func = getattr(self, item[0])
+        func = getattr(self, cmd[0])
+        kwargs = cmd[1]
 
-            method = func
-            if len(item) > 1:
-                kwargs = item[1]
-                method = lambda: func(**kwargs)
+        method = func
+        if kwargs is not None:
+            method = lambda: func(**kwargs)
 
-            # run the action in a thread and keep track of it
-            d = threads.deferToThread(method)
-            d.addCallback(self._done_action, d)
-            d.addErrback(self._done_action, d)
-            self._ongoing_defers.append(d)
-        except Queue.Empty:
-            # If it's just empty we don't have anything to do.
-            pass
-        except Exception as e:
-            logger.exception("Unexpected exception: {0!r}".format(e))
+        logger.debug("Running method: '{0}' "
+                     "with args: '{1}' in a thread".format(cmd[0], kwargs))
+        # run the action in a thread and keep track of it
+        d = threads.deferToThread(method)
+        d.addCallback(self._done_action, d)
+        d.addErrback(self._done_action, d)
+        self._ongoing_defers.append(d)
 
     def _done_action(self, failure, d):
         """
@@ -150,19 +125,14 @@ class Backend(object):
     # Otherwise, the call will be considered as valid in the backend_proxy and
     # will fail in here, while trying to run it.
 
-    def _reset(self):
+    def reset(self):
         """
         Signal a reset_ok signal.
+        Helper to test the signaling system with a simple request/reply.
         """
         self._signaler.signal(self._signaler.reset_ok)
 
-    def reset(self):
-        """
-        Test the signaling system with a simple request/reply.
-        """
-        self._call_queue.put(('_reset', ))
-
-    def _add(self, a, b):
+    def add(self, a, b):
         """
         This adds two parameters and signals the result.
 
@@ -173,28 +143,13 @@ class Backend(object):
         """
         self._signaler.signal(self._signaler.add_result, a+b)
 
-    def add(self, data):
-        """
-        This adds two parameters and signals the result.
-
-        :param data: dict of parameters needed by _add.
-        :type data: dict.
-        """
-        self._call_queue.put(('_add', data))
-
-    def _get_stored_data(self):
+    def get_stored_data(self):
         """
         Signal back some test data.
         """
         self._signaler.signal(self._signaler.stored_data, 'Lorem Data')
 
-    def get_stored_data(self):
-        """
-        Signal back some test data.
-        """
-        self._call_queue.put(('_get_stored_data', ))
-
-    def _blocking_method(self, data, delay):
+    def blocking_method(self, data, delay):
         """
         This method blocks for `delay` seconds.
 
@@ -209,13 +164,6 @@ class Backend(object):
         time.sleep(delay)
         logger.debug("blocking method end")
         self._signaler.signal(self._signaler.blocking_method_ok)
-
-    def blocking_method(self, data):
-        """
-        :param data: dict of parameters needed by _blocking_method.
-        :type data: dict.
-        """
-        self._call_queue.put(('_blocking_method', data))
 
 
 def run_backend():
