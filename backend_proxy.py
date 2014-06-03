@@ -24,6 +24,7 @@ class BackendProxy(object):
         context = zmq.Context()
         logger.debug("Connecting to server...")
         socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect(self.SERVER)
         self._socket = socket
 
@@ -57,9 +58,13 @@ class BackendProxy(object):
 
         # Get the reply.
         # TODO: handle this in a non-blocking way.
-        response = self._socket.recv()
-        msg = "Received reply for '{0}' -> '{1}'".format(request, response)
-        logger.debug(msg)
+        try:
+            response = self._socket.recv()
+            msg = "Received reply for '{0}' -> '{1}'".format(request, response)
+            logger.debug(msg)
+        except zmq.error.Again as e:
+            msg = "Timeout error contacting backend. {0!r}".format(e)
+            logger.critical(msg)
 
     def __getattribute__(self, name):
         """
