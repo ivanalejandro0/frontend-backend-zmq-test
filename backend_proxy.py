@@ -17,13 +17,23 @@ class BackendProxy(object):
     PORT = '5556'
     SERVER = "tcp://localhost:%s" % PORT
 
-    def __init__(self):
+    def __init__(self, backend_key):
         self._socket = None
 
         # initialize ZMQ stuff:
         context = zmq.Context()
         logger.debug("Connecting to server...")
         socket = context.socket(zmq.REQ)
+
+        # public, secret = zmq.curve_keypair()
+        client_keys = zmq.curve_keypair()
+        socket.curve_publickey = client_keys[0]
+        socket.curve_secretkey = client_keys[1]
+
+        # The client must know the server's public key to make a CURVE
+        # connection.
+        socket.curve_serverkey = backend_key
+
         socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect(self.SERVER)
         self._socket = socket

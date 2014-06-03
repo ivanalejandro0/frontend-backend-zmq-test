@@ -19,10 +19,11 @@ class DemoWidget(QtGui.QWidget):
     Demo class that creates a GUI with some buttons to do some test
     communication with the backend.
     """
-    def __init__(self):
+    def __init__(self, key_pair, backend_public_key):
         QtGui.QWidget.__init__(self)
 
-        self._backend_proxy = BackendProxy()
+        self._key_pair = key_pair
+        self._backend_proxy = BackendProxy(backend_key=backend_public_key)
 
         self.init_gui()
         self._setup_signaler()
@@ -32,7 +33,7 @@ class DemoWidget(QtGui.QWidget):
         Setup the SignalerQt instance to use, connect to signals and run
         blocking loop in a thread.
         """
-        self._signaler_qt = signaler = SignalerQt()
+        self._signaler_qt = signaler = SignalerQt(key_pair=self._key_pair)
 
         # Connect signals
         signaler.add_result.connect(self._on_add_result)
@@ -118,7 +119,7 @@ class DemoWidget(QtGui.QWidget):
             self, "Information", 'blocking_method_ok received.')
 
 
-def run_app(should_run_backend=False):
+def run_app(key_pair, backend_key, should_run_backend=False):
     """
     Run the app and start the backend if specified.
 
@@ -126,7 +127,7 @@ def run_app(should_run_backend=False):
     :type should_run_backend: bool
     """
     app = QtGui.QApplication(sys.argv)
-    demo = DemoWidget()
+    demo = DemoWidget(key_pair, backend_key)
     demo.show()
 
     # Ensure that the application quits using CTRL-C

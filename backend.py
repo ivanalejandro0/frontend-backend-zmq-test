@@ -3,6 +3,7 @@
 from twisted.internet import reactor, threads
 
 import zmq
+from zmq.auth.thread import ThreadAuthenticator
 
 from signaler import Signaler
 
@@ -19,11 +20,12 @@ class Backend(object):
     PORT = '5556'
     BIND_ADDR = "tcp://*:%s" % PORT
 
-    def __init__(self):
+    def __init__(self, key_pair, frontend_public_key):
         """
         Backend constructor, create needed instances.
         """
-        self._signaler = Signaler()
+        self._key_pair = key_pair
+        self._signaler = Signaler(signaler_key=frontend_public_key)
         self._running = False
 
         self._ongoing_defers = []
@@ -31,8 +33,21 @@ class Backend(object):
     def _start_zmq_loop(self):
         logger.debug("Starting ZMQ loop...")
         # ZMQ stuff
+
         context = zmq.Context()
         socket = context.socket(zmq.REP)
+
+        # Start an authenticator for this context.
+        auth = ThreadAuthenticator(context)
+        auth.start()
+        auth.allow('127.0.0.1')
+
+        # Tell authenticator to use the certificate in a directory
+        auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
+        socket.curve_publickey = self._key_pair[0]
+        socket.curve_secretkey = self._key_pair[1]
+        socket.curve_server = True  # must come before bind
+
         socket.bind(self.BIND_ADDR)
 
         self._running = True
@@ -166,8 +181,8 @@ class Backend(object):
         self._signaler.signal(self._signaler.blocking_method_ok)
 
 
-def run_backend():
-    backend = Backend()
+def run_backend(key_pair, frontend_key):
+    backend = Backend(key_pair, frontend_key)
     backend.run()
 
 

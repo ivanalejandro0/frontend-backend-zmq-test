@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import zmq
-
 from PySide import QtCore
+
+import zmq
+from zmq.auth.thread import ThreadAuthenticator
 
 from api import SIGNALS
 from utils import get_log_handler
@@ -26,9 +27,10 @@ class SignalerQt(QtCore.QThread):
     # end list of possible Qt signals to emit.
     ###########################################################################
 
-    def __init__(self):
+    def __init__(self, key_pair):
         QtCore.QThread.__init__(self)
         self._stop = False
+        self._key_pair = key_pair
 
     def run(self):
         """
@@ -37,6 +39,18 @@ class SignalerQt(QtCore.QThread):
         logger.debug("Running SignalerQt loop")
         context = zmq.Context()
         socket = context.socket(zmq.REP)
+
+        # Start an authenticator for this context.
+        auth = ThreadAuthenticator(context)
+        auth.start()
+        auth.allow('127.0.0.1')
+
+        # Tell authenticator to use the certificate in a directory
+        auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
+        socket.curve_publickey = self._key_pair[0]
+        socket.curve_secretkey = self._key_pair[1]
+        socket.curve_server = True  # must come before bind
+
         socket.bind(self.BIND_ADDR)
 
         while not self._stop:

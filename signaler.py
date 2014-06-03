@@ -15,13 +15,24 @@ class Signaler(object):
     PORT = "5667"
     SERVER = "tcp://localhost:%s" % PORT
 
-    def __init__(self):
+    def __init__(self, signaler_key):
         """
         Initialize the ZMQ socket to talk to the signaling server.
         """
+        self._signaler_key = signaler_key
         context = zmq.Context()
         logger.debug("Connecting to signaling server...")
         socket = context.socket(zmq.REQ)
+
+        # public, secret = zmq.curve_keypair()
+        client_keys = zmq.curve_keypair()
+        socket.curve_publickey = client_keys[0]
+        socket.curve_secretkey = client_keys[1]
+
+        # The client must know the server's public key to make a CURVE
+        # connection.
+        socket.curve_serverkey = signaler_key
+
         socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect(self.SERVER)
         self._socket = socket
