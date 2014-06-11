@@ -135,6 +135,11 @@ class Backend(object):
         if d in self._ongoing_defers:
             self._ongoing_defers.remove(d)
 
+
+class DemoBackend(Backend):
+    """
+    Backend server subclass, used to implement the API methods.
+    """
     ###########################################################################
     # List of possible methods to use, we MUST implement ALL the API methods.
     # Otherwise, the call will be considered as valid in the backend_proxy and
@@ -182,7 +187,7 @@ class Backend(object):
 
 
 def run_backend(key_pair, frontend_key):
-    backend = Backend(key_pair, frontend_key)
+    backend = DemoBackend(key_pair, frontend_key)
     backend.run()
 
 

@@ -11,7 +11,7 @@ logger = get_log_handler(__name__)
 
 from backend import run_backend
 from backend_proxy import BackendProxy
-from signaler_qt import SignalerQt
+from signaler_qt import DemoSignalerQt
 
 
 class DemoWidget(QtGui.QWidget):
@@ -33,7 +33,7 @@ class DemoWidget(QtGui.QWidget):
         Setup the SignalerQt instance to use, connect to signals and run
         blocking loop in a thread.
         """
-        self._signaler_qt = signaler = SignalerQt(key_pair=self._key_pair)
+        self._signaler_qt = signaler = DemoSignalerQt(key_pair=self._key_pair)
 
         # Connect signals
         signaler.add_result.connect(self._on_add_result)

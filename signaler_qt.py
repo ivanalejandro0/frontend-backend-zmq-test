@@ -18,15 +18,6 @@ class SignalerQt(QtCore.QThread):
     PORT = "5667"
     BIND_ADDR = "tcp://*:%s" % PORT
 
-    ###########################################################################
-    # List of possible Qt signals to emit:
-    add_result = QtCore.Signal(object)
-    reset_ok = QtCore.Signal()
-    stored_data = QtCore.Signal(object)
-    blocking_method_ok = QtCore.Signal()
-    # end list of possible Qt signals to emit.
-    ###########################################################################
-
     def __init__(self, key_pair):
         QtCore.QThread.__init__(self)
         self._stop = False
@@ -99,3 +90,17 @@ class SignalerQt(QtCore.QThread):
             qt_signal.emit()
         else:
             qt_signal.emit(data)
+
+
+class DemoSignalerQt(SignalerQt):
+    """
+    Signaling server subclass, used to defines the API signals.
+    """
+    ###########################################################################
+    # List of possible Qt signals to emit:
+    add_result = QtCore.Signal(object)
+    reset_ok = QtCore.Signal()
+    stored_data = QtCore.Signal(object)
+    blocking_method_ok = QtCore.Signal()
+    # end list of possible Qt signals to emit.
+    ###########################################################################
