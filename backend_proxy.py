@@ -38,13 +38,16 @@ class BackendProxy(object):
         socket.connect(self.SERVER)
         self._socket = socket
 
-    def _api_call(self, **kwargs):
+    def _api_call(self, *args, **kwargs):
         """
         Call the `api_method` method in backend (through zmq).
 
         :param kwargs: named arguments to forward to the backend api method.
         :type kwargs: dict
         """
+        if args:
+            raise Exception("All arguments need to be kwargs!")
+
         api_method = kwargs.pop('api_method', None)
         if api_method is None:
             raise Exception("Missing argument, no method name specified.")
