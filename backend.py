@@ -10,7 +10,7 @@ from zmq.auth.thread import ThreadAuthenticator
 from signaler import Signaler
 
 from api import API
-from utils import get_log_handler
+from utils import get_log_handler, get_backend_certificates
 logger = get_log_handler(__name__)
 
 
@@ -22,12 +22,11 @@ class Backend(object):
     PORT = '5556'
     BIND_ADDR = "tcp://*:%s" % PORT
 
-    def __init__(self, key_pair, frontend_public_key):
+    def __init__(self):
         """
         Backend constructor, create needed instances.
         """
-        self._key_pair = key_pair
-        self._signaler = Signaler(signaler_key=frontend_public_key)
+        self._signaler = Signaler()
         self._running = False
 
         self._ongoing_defers = []
@@ -46,8 +45,9 @@ class Backend(object):
 
         # Tell authenticator to use the certificate in a directory
         auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
-        socket.curve_publickey = self._key_pair[0]
-        socket.curve_secretkey = self._key_pair[1]
+        public, secret = get_backend_certificates()
+        socket.curve_publickey = public
+        socket.curve_secretkey = secret
         socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
@@ -191,8 +191,8 @@ class DemoBackend(Backend):
         self._signaler.signal(self._signaler.blocking_method_ok)
 
 
-def run_backend(key_pair, frontend_key):
-    backend = DemoBackend(key_pair, frontend_key)
+def run_backend():
+    backend = DemoBackend()
     backend.run()
 
 

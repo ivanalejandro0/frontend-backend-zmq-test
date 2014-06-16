@@ -3,7 +3,7 @@
 import zmq
 
 from api import SIGNALS
-from utils import get_log_handler
+from utils import get_log_handler, get_frontend_certificates
 logger = get_log_handler(__name__)
 
 
@@ -15,11 +15,10 @@ class Signaler(object):
     PORT = "5667"
     SERVER = "tcp://localhost:%s" % PORT
 
-    def __init__(self, signaler_key):
+    def __init__(self):
         """
         Initialize the ZMQ socket to talk to the signaling server.
         """
-        self._signaler_key = signaler_key
         context = zmq.Context()
         logger.debug("Connecting to signaling server...")
         socket = context.socket(zmq.REQ)
@@ -31,7 +30,8 @@ class Signaler(object):
 
         # The client must know the server's public key to make a CURVE
         # connection.
-        socket.curve_serverkey = signaler_key
+        public, _ = get_frontend_certificates()
+        socket.curve_serverkey = public
 
         socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect(self.SERVER)

@@ -5,7 +5,7 @@ import functools
 import zmq
 
 from api import API
-from utils import get_log_handler
+from utils import get_log_handler, get_backend_certificates
 logger = get_log_handler(__name__)
 
 
@@ -17,7 +17,7 @@ class BackendProxy(object):
     PORT = '5556'
     SERVER = "tcp://localhost:%s" % PORT
 
-    def __init__(self, backend_key):
+    def __init__(self):
         self._socket = None
 
         # initialize ZMQ stuff:
@@ -32,7 +32,8 @@ class BackendProxy(object):
 
         # The client must know the server's public key to make a CURVE
         # connection.
-        socket.curve_serverkey = backend_key
+        public, _ = get_backend_certificates()
+        socket.curve_serverkey = public
 
         socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect(self.SERVER)

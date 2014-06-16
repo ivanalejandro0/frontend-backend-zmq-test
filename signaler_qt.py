@@ -6,7 +6,7 @@ import zmq
 from zmq.auth.thread import ThreadAuthenticator
 
 from api import SIGNALS
-from utils import get_log_handler
+from utils import get_log_handler, get_frontend_certificates
 logger = get_log_handler(__name__)
 
 
@@ -18,10 +18,9 @@ class SignalerQt(QtCore.QThread):
     PORT = "5667"
     BIND_ADDR = "tcp://*:%s" % PORT
 
-    def __init__(self, key_pair):
+    def __init__(self):
         QtCore.QThread.__init__(self)
         self._stop = False
-        self._key_pair = key_pair
 
     def run(self):
         """
@@ -38,8 +37,9 @@ class SignalerQt(QtCore.QThread):
 
         # Tell authenticator to use the certificate in a directory
         auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
-        socket.curve_publickey = self._key_pair[0]
-        socket.curve_secretkey = self._key_pair[1]
+        public, secret = get_frontend_certificates()
+        socket.curve_publickey = public
+        socket.curve_secretkey = secret
         socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
