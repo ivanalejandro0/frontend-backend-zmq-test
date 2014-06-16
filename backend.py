@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import json
+
 from twisted.internet import reactor, threads
 
 import zmq
@@ -80,7 +82,9 @@ class Backend(object):
         :type request_json: str
         """
         try:
-            request = zmq.utils.jsonapi.loads(request_json)
+            # request = zmq.utils.jsonapi.loads(request_json)
+            # We use stdlib's json to ensure that we get unicode strings
+            request = json.loads(request_json)
             api_method = request['api_method']
             kwargs = request['arguments'] or None
         except Exception:
@@ -174,14 +178,15 @@ class DemoBackend(Backend):
         This method blocks for `delay` seconds.
 
         :param data: some data
-        :type data: str
+        :type data: unicode
         :param delay: this indicates how much time we need to wait until return
         :type delay: int
         """
+        assert isinstance(data, unicode)  # ensure parameter type
         logger.debug("blocking method start")
-        logger.debug("data: {0} - delay:{1}".format(data, delay))
+        logger.debug("data: {0!r} - delay:{1}".format(data, delay))
         import time
-        time.sleep(delay)
+        time.sleep(delay)  # simulate some work
         logger.debug("blocking method end")
         self._signaler.signal(self._signaler.blocking_method_ok)
 

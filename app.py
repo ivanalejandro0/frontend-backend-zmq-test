@@ -95,7 +95,7 @@ class DemoWidget(QtGui.QWidget):
 
     def _call_block_call(self):
         logger.debug("calling: blocking_method")
-        self._backend_proxy.blocking_method(data='blah', delay=5)
+        self._backend_proxy.blocking_method(data=u'bláḩ', delay=1)
 
     ####################
     # Backend signals handlers
