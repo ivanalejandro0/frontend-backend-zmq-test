@@ -95,7 +95,6 @@ class Backend(object):
             raise
 
         if api_method not in API:
-            self._signaler.signal(Signaler.invalid_api_call)
             logger.error("Invalid API call '{0}'".format(api_method))
             return
 
