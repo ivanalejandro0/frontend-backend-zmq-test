@@ -6,7 +6,7 @@ This small app is used to start the GUI and the Backend in different process.
 import multiprocessing
 import signal
 
-from app import run_app
+from demo_app import run_app
 from backend import run_backend
 
 

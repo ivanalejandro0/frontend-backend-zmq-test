@@ -9,7 +9,7 @@ Files explanation
 ### Frontend:
 
 <dl>
-  <dt>app.py</dt>
+  <dt>demo_app.py</dt>
   <dd>Demo class that creates a GUI with some buttons to do some test communication with the backend.</dd>
 
   <dt>backend_proxy.py</dt>
@@ -46,7 +46,7 @@ Files explanation
 
 <dl>
   <dt>utils.py</dt>
-  <dd>Logging utility.</dd>
+  <dd>Utilities for logging and ZMQ auth.</dd>
 
   <dt>requirements.txt</dt>
   <dd>Requirements file to install dependencies using pip.</dd>
@@ -56,21 +56,27 @@ Files explanation
 </dl>
 
 
-Diagram
--------
+Diagrams
+--------
 
-![Diagram](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/frontend-backend-zmq-test.png)
+### Components
+
+![Components](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/components.png)
+
+### Communication flow
+
+![Communication flow](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/communication-flow.png)
 
 Instructions
 ------------
-You can run the `app.py` file that uses a separate process for the backend:
+You can run the `demo_app.py` file that uses a separate process for the backend:
 
-    python app.py
+    python demo_app.py
 
 
 You can run in the GUI and the Backend in different consoles:
 
-    python app.py --no-backend
+    python demo_app.py --no-backend
     python backend.py
 
 
