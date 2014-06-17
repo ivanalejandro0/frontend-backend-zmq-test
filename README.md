@@ -1,7 +1,17 @@
 frontend-backend-zmq-test
 =========================
 
-A basic app separation in frontend/backend that communicates the moving parts using zmq and qt signals.
+A (kind of) basic app that separates the GUI (frontend) and the logic/hard-work
+(backend) in different process and communicates the moving parts using zmq and
+qt signals.
+
+The frontend and the backend are started in different processes using
+`multiprocessing`.
+
+The communication is handled using `pyzmq` and is secured using the ZMQ's CURVE
+security mechanism.
+
+Each task that the backend needs to work in is started in a `twisted` thread.
 
 Files explanation
 -----------------
