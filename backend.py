@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import json
+import signal
 
 from twisted.internet import reactor, threads
 
@@ -192,6 +193,9 @@ class DemoBackend(Backend):
 
 
 def run_backend():
+    # Ensure that the application quits using CTRL-C
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     backend = DemoBackend()
     backend.run()
 
