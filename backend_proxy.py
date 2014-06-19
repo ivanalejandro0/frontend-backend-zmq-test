@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import functools
+import Queue
+import threading
 
 import zmq
 
@@ -39,6 +41,21 @@ class BackendProxy(object):
         socket.connect(self.SERVER)
         self._socket = socket
 
+        self._call_queue = Queue.Queue()
+        self._worker_caller = threading.Thread(target=self._worker)
+        self._worker_caller.start()
+
+    def _worker(self):
+        """
+        Worker loop that processes the Queue of pending requests to do.
+        """
+        while True:
+            try:
+                request = self._call_queue.get(block=False)
+                self._send_request(request)
+            except Queue.Empty:
+                pass
+
     def _api_call(self, *args, **kwargs):
         """
         Call the `api_method` method in backend (through zmq).
@@ -67,11 +84,22 @@ class BackendProxy(object):
             logger.critical(msg)
             raise
 
-        logger.debug("Sending request to backend: {0}".format(request_json))
-        self._socket.send(request_json)
+        # queue the call in order to handle the request in a thread safe way.
+        self._call_queue.put(request_json)
+
+    def _send_request(self, request):
+        """
+        Send the given request to the server.
+        This is used from a thread safe loop in order to avoid sending a
+        request without receiving a response from a previous one.
+
+        :param request: the request to send.
+        :type request: str
+        """
+        logger.debug("Sending request to backend: {0}".format(request))
+        self._socket.send(request)
 
         # Get the reply.
-        # TODO: handle this in a non-blocking way.
         try:
             response = self._socket.recv()
             msg = "Received reply for '{0}' -> '{1}'".format(request, response)

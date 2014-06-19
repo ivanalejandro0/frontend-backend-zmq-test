@@ -9,6 +9,9 @@ API = (
     "reset",
     "get_stored_data",
     "blocking_method",
+
+    'twice_01',
+    'twice_02',
 )
 
 
@@ -17,4 +20,5 @@ SIGNALS = (
     "reset_ok",
     "stored_data",
     "blocking_method_ok",
+    "twice_signal",
 )

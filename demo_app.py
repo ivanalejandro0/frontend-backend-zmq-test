@@ -52,12 +52,16 @@ class DemoWidget(QtGui.QWidget):
         pb_test2 = QtGui.QPushButton('Add 2+2')
         pb_test3 = QtGui.QPushButton('Giveme stored data')
         pb_test4 = QtGui.QPushButton('Blocking method')
+        pb_test5 = QtGui.QPushButton('Signal twice, threaded')
 
         # connect buttons with demo actions
         pb_test1.clicked.connect(self._call_reset)
         pb_test2.clicked.connect(self._call_add)
         pb_test3.clicked.connect(self._call_get_data)
         pb_test4.clicked.connect(self._call_block_call)
+
+        pb_test5.clicked.connect(self._call_twice_01)
+        pb_test5.clicked.connect(self._call_twice_02)
 
         # define layout
         hbox = QtGui.QHBoxLayout()
@@ -66,6 +70,7 @@ class DemoWidget(QtGui.QWidget):
         hbox.addWidget(pb_test2)
         hbox.addWidget(pb_test3)
         hbox.addWidget(pb_test4)
+        hbox.addWidget(pb_test5)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addStretch(1)
@@ -95,6 +100,14 @@ class DemoWidget(QtGui.QWidget):
     def _call_block_call(self):
         logger.debug("calling: blocking_method")
         self._backend_proxy.blocking_method(data=u'bláḩ', delay=1)
+
+    def _call_twice_01(self):
+        logger.debug("calling: twice_01")
+        self._backend_proxy.twice_01()
+
+    def _call_twice_02(self):
+        logger.debug("calling: twice_02")
+        self._backend_proxy.twice_02()
 
     ####################
     # Backend signals handlers

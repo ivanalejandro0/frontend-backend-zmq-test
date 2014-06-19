@@ -102,5 +102,6 @@ class DemoSignalerQt(SignalerQt):
     reset_ok = QtCore.Signal()
     stored_data = QtCore.Signal(object)
     blocking_method_ok = QtCore.Signal()
+    twice_signal = QtCore.Signal()
     # end list of possible Qt signals to emit.
     ###########################################################################

@@ -190,6 +190,12 @@ class DemoBackend(Backend):
         logger.debug("blocking method end")
         self._signaler.signal(self._signaler.blocking_method_ok)
 
+    def twice_01(self):
+        self._signaler.signal(self._signaler.twice_signal)
+
+    def twice_02(self):
+        self._signaler.signal(self._signaler.twice_signal)
+
 
 def run_backend():
     # Ensure that the application quits using CTRL-C
