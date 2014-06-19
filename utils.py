@@ -59,7 +59,3 @@ def get_log_handler(name):
     logger.debug('Console handler plugged!')
 
     return logger
-
-
-# if __name__ == '__main__':
-#     generate_certificates(os.path.dirname(__file__))
