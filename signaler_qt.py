@@ -86,7 +86,7 @@ class SignalerQt(QtCore.QThread):
             return
 
         logger.debug("Emitting '{0}'".format(signal))
-        if not data:
+        if data is None:
             qt_signal.emit()
         else:
             qt_signal.emit(data)
