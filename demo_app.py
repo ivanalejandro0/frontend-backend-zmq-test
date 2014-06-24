@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import signal
+import time
 
 from PySide import QtGui
 
@@ -82,6 +83,17 @@ class DemoWidget(QtGui.QWidget):
         self.setGeometry(300, 300, 250, 150)
         self.setWindowTitle('Test window')
 
+    def closeEvent(self, e):
+        """
+        Reimplementation of closeEvent.
+        """
+        logger.debug("Closing app")
+        self._signaler_qt.stop()
+        self._backend_proxy.stop()
+        time.sleep(0.05)  # give the thread a little time to finish.
+
+        QtGui.QWidget.closeEvent(self, e)
+
     ####################
     # Backend calls, on buttons clicked
 
@@ -99,7 +111,7 @@ class DemoWidget(QtGui.QWidget):
 
     def _call_block_call(self):
         logger.debug("calling: blocking_method")
-        self._backend_proxy.blocking_method(data=u'bláḩ', delay=1)
+        self._backend_proxy.blocking_method(data=u'bláḩ', delay=19)
 
     def _call_twice_01(self):
         logger.debug("calling: twice_01")

@@ -46,10 +46,16 @@ class SignalerQt(QtCore.QThread):
 
         while not self._stop:
             # Wait for next request from client
-            request = socket.recv()
-            logger.debug("Received request: '{0}'".format(request))
-            socket.send("OK")
-            self._process_request(request)
+            try:
+                request = socket.recv(zmq.NOBLOCK)
+                logger.debug("Received request: '{0}'".format(request))
+                socket.send("OK")
+                self._process_request(request)
+            except zmq.ZMQError as e:
+                if e.errno != zmq.EAGAIN:
+                    raise
+
+        logger.debug("SignalerQt thread stopped.")
 
     def stop(self):
         """

@@ -6,7 +6,7 @@ import threading
 
 import zmq
 
-from api import API
+from api import API, STOP_REQUEST
 from utils import get_log_handler, get_backend_certificates
 logger = get_log_handler(__name__)
 
@@ -42,6 +42,7 @@ class BackendProxy(object):
         self._socket = socket
 
         self._call_queue = Queue.Queue()
+        self._stop_worker = False
         self._worker_caller = threading.Thread(target=self._worker)
         self._worker_caller.start()
 
@@ -52,9 +53,17 @@ class BackendProxy(object):
         while True:
             try:
                 request = self._call_queue.get(block=False)
+                # break the loop after sending the 'stop' action to the
+                # backend.
+                # if self._stop_worker:
+                if request == STOP_REQUEST:
+                    break
+
                 self._send_request(request)
             except Queue.Empty:
                 pass
+
+        logger.debug("BackendProxy worker stopped.")
 
     def _api_call(self, *args, **kwargs):
         """
@@ -87,6 +96,9 @@ class BackendProxy(object):
         # queue the call in order to handle the request in a thread safe way.
         self._call_queue.put(request_json)
 
+        if api_method == STOP_REQUEST:
+            self._call_queue.put(STOP_REQUEST)
+
     def _send_request(self, request):
         """
         Send the given request to the server.
@@ -99,8 +111,8 @@ class BackendProxy(object):
         logger.debug("Sending request to backend: {0}".format(request))
         self._socket.send(request)
 
-        # Get the reply.
         try:
+            # Get the reply.
             response = self._socket.recv()
             msg = "Received reply for '{0}' -> '{1}'".format(request, response)
             logger.debug(msg)

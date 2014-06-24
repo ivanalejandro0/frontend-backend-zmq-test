@@ -4,7 +4,11 @@
 Backend available API and SIGNALS definition.
 """
 
+STOP_REQUEST = "stop"
+
 API = (
+    STOP_REQUEST,  # this method needs to be defined in order to support the
+                   # backend stop action
     "add",
     "reset",
     "get_stored_data",
