@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import time
+
 from PySide import QtCore
 
 import zmq
@@ -54,6 +56,7 @@ class SignalerQt(QtCore.QThread):
             except zmq.ZMQError as e:
                 if e.errno != zmq.EAGAIN:
                     raise
+            time.sleep(0.01)
 
         logger.debug("SignalerQt thread stopped.")
 

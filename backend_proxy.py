@@ -3,6 +3,7 @@
 import functools
 import Queue
 import threading
+import time
 
 import zmq
 
@@ -62,6 +63,7 @@ class BackendProxy(object):
                 self._send_request(request)
             except Queue.Empty:
                 pass
+            time.sleep(0.01)
 
         logger.debug("BackendProxy worker stopped.")
 

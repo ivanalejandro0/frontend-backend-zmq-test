@@ -2,6 +2,7 @@
 # encoding: utf-8
 import Queue
 import threading
+import time
 
 import zmq
 
@@ -97,6 +98,7 @@ class Signaler(object):
                 self._send_request(request)
             except Queue.Empty:
                 pass
+            time.sleep(0.01)
 
     def _send_request(self, request):
         """
