@@ -5,6 +5,7 @@ import signal
 import time
 
 from twisted.internet import defer, reactor, threads
+from twisted.internet.task import LoopingCall
 
 import zmq
 from zmq.auth.thread import ThreadAuthenticator
@@ -30,19 +31,16 @@ class Backend(object):
         """
         self._signaler = Signaler()
 
-        # This attribute is used to stop the zmq parsing loop from other
-        # thread.
-        self._running = False
+        self._worker_lc = LoopingCall(self._worker)
+        self._zmq_socket = None
 
         self._ongoing_defers = []
+        self._init_zmq()
 
-    def _start_zmq_loop(self):
+    def _init_zmq(self):
         """
-        Start the zmq loop that receives requests, parses them and run the
-        corresponding methods.
+        Configure the zmq components and connection.
         """
-        logger.debug("Starting ZMQ loop...")
-
         context = zmq.Context()
         socket = context.socket(zmq.REP)
 
@@ -60,25 +58,31 @@ class Backend(object):
 
         socket.bind(self.BIND_ADDR)
 
-        self._running = True
-        while self._running:
-            # Wait for next request from client
-            try:
-                request = socket.recv(zmq.NOBLOCK)
-                socket.send("OK")
-                logger.debug("Received request: '{0}'".format(request))
-                self._process_request(request)
-            except zmq.ZMQError as e:
-                if e.errno != zmq.EAGAIN:
-                    raise
+        self._zmq_socket = socket
 
-        logger.debug("ZMQ parsing loop stopped.")
-        self._stop_reactor()
+    def _worker(self):
+        """
+        Receive requests and send it to process.
+        """
+        # Wait for next request from client
+        try:
+            request = self._zmq_socket.recv(zmq.NOBLOCK)
+            self._zmq_socket.send("OK")
+            logger.debug("Received request: '{0}'".format(request))
+            self._process_request(request)
+        except zmq.ZMQError as e:
+            if e.errno != zmq.EAGAIN:
+                raise
 
     def _stop_reactor(self):
         """
-        Stop the Twisted reactor, but first wait a little for some defers to
+        Stop the Twisted reactor, but first wait a little for some threads to
         complete their work.
+
+        Note: this method needs to be run in a different thread so the
+        time.sleep() does not block and other threads can finish.
+        i.e.:
+            use threads.deferToThread(this_method) instead of this_method()
         """
         wait_max = 5  # seconds
         wait_step = 0.5
@@ -86,7 +90,7 @@ class Backend(object):
         while self._ongoing_defers and wait < wait_max:
             time.sleep(wait_step)
             wait += wait_step
-            msg = "Waiting for ongoing defers to finish... {0}/{1}"
+            msg = "Waiting for ongoing threads to finish... {0}/{1}"
             msg = msg.format(wait, wait_max)
             logger.debug(msg)
 
@@ -99,9 +103,9 @@ class Backend(object):
 
     def run(self):
         """
-        Start the ZMQ server and run the blocking loop to handle requests.
+        Start the ZMQ server and run the loop to handle requests.
         """
-        threads.deferToThread(self._start_zmq_loop)
+        self._worker_lc.start(0.01)
         reactor.run()
 
     def stop(self):
@@ -109,7 +113,9 @@ class Backend(object):
         Stop the server and the zmq request parse loop.
         """
         logger.debug("STOP received.")
-        self._running = False
+        if self._worker_lc.running:
+            self._worker_lc.stop()
+        threads.deferToThread(self._stop_reactor)
 
     def _process_request(self, request_json):
         """
