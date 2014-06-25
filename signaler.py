@@ -42,8 +42,9 @@ class Signaler(object):
         self._socket = socket
 
         self._signal_queue = Queue.Queue()
+
+        self._do_work = False  # used to stop the worker loop.
         self._worker_signaler = threading.Thread(target=self._worker)
-        self._worker_signaler.start()
 
     def __getattribute__(self, name):
         """
@@ -92,13 +93,28 @@ class Signaler(object):
         """
         Worker loop that processes the Queue of pending requests to do.
         """
-        while True:
+        while self._do_work:
             try:
                 request = self._signal_queue.get(block=False)
                 self._send_request(request)
             except Queue.Empty:
                 pass
             time.sleep(0.01)
+
+        logger.debug("Signaler thread stopped.")
+
+    def start(self):
+        """
+        Start the Signaler worker.
+        """
+        self._do_work = True
+        self._worker_signaler.start()
+
+    def stop(self):
+        """
+        Stop the Signaler worker.
+        """
+        self._do_work = False
 
     def _send_request(self, request):
         """

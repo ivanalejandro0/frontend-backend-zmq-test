@@ -105,6 +105,7 @@ class Backend(object):
         """
         Start the ZMQ server and run the loop to handle requests.
         """
+        self._signaler.start()
         self._worker_lc.start(0.01)
         reactor.run()
 
@@ -113,6 +114,7 @@ class Backend(object):
         Stop the server and the zmq request parse loop.
         """
         logger.debug("STOP received.")
+        self._signaler.stop()
         if self._worker_lc.running:
             self._worker_lc.stop()
         threads.deferToThread(self._stop_reactor)
