@@ -5,7 +5,6 @@ import signal
 import time
 
 from twisted.internet import defer, reactor, threads
-from twisted.internet.task import LoopingCall
 
 import zmq
 from zmq.auth.thread import ThreadAuthenticator
@@ -31,7 +30,7 @@ class Backend(object):
         """
         self._signaler = Signaler()
 
-        self._worker_lc = LoopingCall(self._worker)
+        self._do_work = False  # used to stop the worker thread.
         self._zmq_socket = None
 
         self._ongoing_defers = []
@@ -64,15 +63,17 @@ class Backend(object):
         """
         Receive requests and send it to process.
         """
-        # Wait for next request from client
-        try:
-            request = self._zmq_socket.recv(zmq.NOBLOCK)
-            self._zmq_socket.send("OK")
-            logger.debug("Received request: '{0}'".format(request))
-            self._process_request(request)
-        except zmq.ZMQError as e:
-            if e.errno != zmq.EAGAIN:
-                raise
+        while self._do_work:
+            # Wait for next request from client
+            try:
+                request = self._zmq_socket.recv(zmq.NOBLOCK)
+                self._zmq_socket.send("OK")
+                logger.debug("Received request: '{0}'".format(request))
+                self._process_request(request)
+            except zmq.ZMQError as e:
+                if e.errno != zmq.EAGAIN:
+                    raise
+            time.sleep(0.01)
 
     def _stop_reactor(self):
         """
@@ -90,7 +91,7 @@ class Backend(object):
         while self._ongoing_defers and wait < wait_max:
             time.sleep(wait_step)
             wait += wait_step
-            msg = "Waiting for ongoing threads to finish... {0}/{1}"
+            msg = "Waiting for running threads to finish... {0}/{1}"
             msg = msg.format(wait, wait_max)
             logger.debug(msg)
 
@@ -106,7 +107,8 @@ class Backend(object):
         Start the ZMQ server and run the loop to handle requests.
         """
         self._signaler.start()
-        self._worker_lc.start(0.01)
+        self._do_work = True
+        threads.deferToThread(self._worker)
         reactor.run()
 
     def stop(self):
@@ -115,8 +117,7 @@ class Backend(object):
         """
         logger.debug("STOP received.")
         self._signaler.stop()
-        if self._worker_lc.running:
-            self._worker_lc.stop()
+        self._do_work = False
         threads.deferToThread(self._stop_reactor)
 
     def _process_request(self, request_json):
