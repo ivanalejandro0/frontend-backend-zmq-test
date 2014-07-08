@@ -71,6 +71,8 @@ class BackendProxy(object):
 
         :param kwargs: named arguments to forward to the backend api method.
         :type kwargs: dict
+
+        Note: is mandatory to have the kwarg 'api_method' defined.
         """
         if args:
             # Use a custom message to be more clear about using kwargs *only*
