@@ -22,7 +22,7 @@ class Backend(object):
     Receives signals from backend_proxy and emit signals if needed.
     """
     PORT = '5556'
-    BIND_ADDR = "tcp://*:%s" % PORT
+    BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
 
     def __init__(self):
         """

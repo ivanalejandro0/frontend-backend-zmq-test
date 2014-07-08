@@ -18,7 +18,7 @@ class SignalerQt(QtCore.QThread):
     Receives signals from the signaling client and emit Qt signals for the GUI.
     """
     PORT = "5667"
-    BIND_ADDR = "tcp://*:%s" % PORT
+    BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
 
     def __init__(self):
         QtCore.QThread.__init__(self)
