@@ -149,24 +149,26 @@ class Backend(object):
             logger.error("Invalid API call '{0}'".format(api_method))
             return
 
-        self._run_in_thread((api_method, kwargs))
+        self._run_in_thread(api_method, kwargs)
 
-    def _run_in_thread(self, cmd):
+    def _run_in_thread(self, api_method, kwargs):
         """
         Run the method name in a thread with the given arguments.
 
-        :param cmd: a tuple containing (method, arguments)
-        :type cmd: tuple (str, dict or None)
+        :param api_method: the callable name to run in a thread.
+        :type api_method: str
+        :param kwargs: the arguments dict that will be sent to the callable.
+        :type kwargs: tuple
         """
-        func = getattr(self, cmd[0])
-        kwargs = cmd[1]
+        func = getattr(self, api_method)
 
         method = func
         if kwargs is not None:
             method = lambda: func(**kwargs)
 
         logger.debug("Running method: '{0}' "
-                     "with args: '{1}' in a thread".format(cmd[0], kwargs))
+                     "with args: '{1}' in a thread".format(api_method, kwargs))
+
         # run the action in a thread and keep track of it
         d = threads.deferToThread(method)
         d.addCallback(self._done_action, d)
