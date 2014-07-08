@@ -73,6 +73,7 @@ class BackendProxy(object):
         :type kwargs: dict
         """
         if args:
+            # Use a custom message to be more clear about using kwargs *only*
             raise Exception("All arguments need to be kwargs!")
 
         api_method = kwargs.pop('api_method', None)
