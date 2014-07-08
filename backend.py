@@ -138,8 +138,9 @@ class Backend(object):
             request = json.loads(request_json)
             api_method = request['api_method']
             kwargs = request['arguments'] or None
-        except Exception:
-            msg = "Malformed JSON data in Backend request '{0}'"
+        except Exception as e:
+            msg = "Malformed JSON data in Backend request '{0}'. Exc: {1!r}"
+            msg = msg.format(request_json, e)
             msg = msg.format(request_json)
             logger.critical(msg)
             raise

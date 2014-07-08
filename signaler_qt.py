@@ -80,9 +80,9 @@ class SignalerQt(QtCore.QThread):
             request = zmq.utils.jsonapi.loads(request_json)
             signal = request['signal']
             data = request['data']
-        except Exception:
-            msg = "Malformed JSON data in Signaler request '{0}'"
-            msg = msg.format(request_json)
+        except Exception as e:
+            msg = "Malformed JSON data in Signaler request '{0}'. Exc: {1!r}"
+            msg = msg.format(request_json, e)
             logger.critical(msg)
             raise
 
