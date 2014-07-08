@@ -2,6 +2,7 @@
 # encoding: utf-8
 import json
 import signal
+import threading
 import time
 
 from twisted.internet import defer, reactor, threads
@@ -30,7 +31,7 @@ class Backend(object):
         """
         self._signaler = Signaler()
 
-        self._do_work = False  # used to stop the worker thread.
+        self._do_work = threading.Event()  # used to stop the worker thread.
         self._zmq_socket = None
 
         self._ongoing_defers = []
@@ -62,8 +63,11 @@ class Backend(object):
     def _worker(self):
         """
         Receive requests and send it to process.
+
+        Note: we use a simple while since is less resource consuming than a
+        Twisted's LoopingCall.
         """
-        while self._do_work:
+        while self._do_work.is_set():
             # Wait for next request from client
             try:
                 request = self._zmq_socket.recv(zmq.NOBLOCK)
@@ -107,7 +111,7 @@ class Backend(object):
         Start the ZMQ server and run the loop to handle requests.
         """
         self._signaler.start()
-        self._do_work = True
+        self._do_work.set()
         threads.deferToThread(self._worker)
         reactor.run()
 
@@ -117,7 +121,7 @@ class Backend(object):
         """
         logger.debug("STOP received.")
         self._signaler.stop()
-        self._do_work = False
+        self._do_work.clear()
         threads.deferToThread(self._stop_reactor)
 
     def _process_request(self, request_json):

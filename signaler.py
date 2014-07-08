@@ -43,7 +43,7 @@ class Signaler(object):
 
         self._signal_queue = Queue.Queue()
 
-        self._do_work = False  # used to stop the worker loop.
+        self._do_work = threading.Event()  # used to stop the worker thread.
         self._worker_signaler = threading.Thread(target=self._worker)
 
     def __getattribute__(self, name):
@@ -93,7 +93,7 @@ class Signaler(object):
         """
         Worker loop that processes the Queue of pending requests to do.
         """
-        while self._do_work:
+        while self._do_work.is_set():
             try:
                 request = self._signal_queue.get(block=False)
                 self._send_request(request)
@@ -107,14 +107,14 @@ class Signaler(object):
         """
         Start the Signaler worker.
         """
-        self._do_work = True
+        self._do_work.set()
         self._worker_signaler.start()
 
     def stop(self):
         """
         Stop the Signaler worker.
         """
-        self._do_work = False
+        self._do_work.clear()
 
     def _send_request(self, request):
         """

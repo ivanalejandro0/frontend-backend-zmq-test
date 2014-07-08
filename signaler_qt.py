@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import threading
 import time
 
 from PySide import QtCore
@@ -22,7 +23,8 @@ class SignalerQt(QtCore.QThread):
 
     def __init__(self):
         QtCore.QThread.__init__(self)
-        self._stop = False
+        self._do_work = threading.Event()
+        self._do_work.set()
 
     def run(self):
         """
@@ -46,7 +48,7 @@ class SignalerQt(QtCore.QThread):
 
         socket.bind(self.BIND_ADDR)
 
-        while not self._stop:
+        while self._do_work.is_set():
             # Wait for next request from client
             try:
                 request = socket.recv(zmq.NOBLOCK)
@@ -64,7 +66,7 @@ class SignalerQt(QtCore.QThread):
         """
         Stop the SignalerQt blocking loop.
         """
-        self._stop = True
+        self._do_work.clear()
 
     def _process_request(self, request_json):
         """

@@ -43,7 +43,6 @@ class BackendProxy(object):
         self._socket = socket
 
         self._call_queue = Queue.Queue()
-        self._stop_worker = False
         self._worker_caller = threading.Thread(target=self._worker)
         self._worker_caller.start()
 
@@ -56,7 +55,6 @@ class BackendProxy(object):
                 request = self._call_queue.get(block=False)
                 # break the loop after sending the 'stop' action to the
                 # backend.
-                # if self._stop_worker:
                 if request == STOP_REQUEST:
                     break
 
