@@ -22,21 +22,27 @@ Files explanation
   <dt>demo_app.py</dt>
   <dd>Demo class that creates a GUI with some buttons to do some test communication with the backend.</dd>
 
-  <dt>backend_proxy.py</dt>
+  <dt>base/backend_proxy.py</dt>
   <dd>Handle calls from the GUI and forwards (through ZMQ) to the backend.</dd>
 
-  <dt>signaler_qt.py</dt>
+  <dt>base/signaler_qt.py</dt>
   <dd>Receives signals from the signaling client and emit Qt signals for the GUI.</dd>
+
+  <dt>demo_signaler_qt.py</dt>
+  <dd>Demo implementation of the SignalerQt</dd>
 </dl>
 
 
 ### Backend:
 
 <dl>
-  <dt>backend.py</dt>
+  <dt>base/backend.py</dt>
   <dd>Receives signals from backend_proxy and emit signals if needed.</dd>
 
-  <dt>signaler.py</dt>
+  <dt>demo_backend.py</dt>
+  <dd>Demo implementation of Backend.</dd>
+
+  <dt>base/signaler.py</dt>
   <dd>Receives signals from the backend and sends to the signaling server.</dd>
 </dl>
 
@@ -56,7 +62,10 @@ Files explanation
 
 <dl>
   <dt>utils.py</dt>
-  <dd>Utilities for logging and ZMQ auth.</dd>
+  <dd>Utilities for logging.</dd>
+
+  <dt>base/certificates.py</dt>
+  <dd>Utilities ZMQ auth.</dd>
 
   <dt>requirements.txt</dt>
   <dd>Requirements file to install dependencies using pip.</dd>
@@ -100,3 +109,7 @@ Requirements
 * pyzmq
 * pyside
 * twisted
+
+If you run use a virtualenv you may want to use the global installation of
+PySide. The pyside-to-virtualenv.sh helper script links the global libraries
+into the virtualenv.
