@@ -7,7 +7,8 @@ import time
 import zmq
 
 from api import SIGNALS
-from utils import get_log_handler, get_frontend_certificates
+from certificates import get_frontend_certificates
+from utils import get_log_handler
 logger = get_log_handler(__name__)
 
 

@@ -12,7 +12,9 @@ from zmq.auth.thread import ThreadAuthenticator
 from signaler import Signaler
 
 from api import API
-from utils import get_log_handler, get_backend_certificates
+from certificates import get_backend_certificates
+from utils import get_log_handler
+
 logger = get_log_handler(__name__)
 
 

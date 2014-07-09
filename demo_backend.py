@@ -2,8 +2,9 @@
 # encoding: utf-8
 import signal
 
-from backend import Backend
+from base.backend import Backend
 from utils import get_log_handler
+
 logger = get_log_handler(__name__)
 
 

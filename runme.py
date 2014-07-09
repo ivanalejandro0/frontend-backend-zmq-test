@@ -6,9 +6,9 @@ This small app is used to start the GUI and the Backend in different process.
 import multiprocessing
 import signal
 
+from base.certificates import generate_certificates
 from demo_app import run_app
 from demo_backend import run_backend
-from utils import generate_certificates
 
 
 if __name__ == '__main__':

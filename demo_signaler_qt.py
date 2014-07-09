@@ -2,7 +2,7 @@
 # encoding: utf-8
 from PySide import QtCore
 
-from signaler_qt import SignalerQt
+from base.signaler_qt import SignalerQt
 
 
 class DemoSignalerQt(SignalerQt):
