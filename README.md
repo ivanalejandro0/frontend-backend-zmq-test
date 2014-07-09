@@ -71,11 +71,11 @@ Diagrams
 
 ### Components
 
-![Components](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/components.png)
+![Components](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/imgs/components.png)
 
 ### Communication flow
 
-![Communication flow](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/communication-flow.png)
+![Communication flow](https://raw.githubusercontent.com/ivanalejandro0/frontend-backend-zmq-test/master/imgs/communication-flow.png)
 
 Instructions
 ------------
