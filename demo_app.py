@@ -10,9 +10,9 @@ from PySide import QtGui
 from utils import get_log_handler
 logger = get_log_handler(__name__)
 
-from backend import run_backend
 from backend_proxy import BackendProxy
-from signaler_qt import DemoSignalerQt
+from demo_backend import run_backend
+from demo_signaler_qt import DemoSignalerQt
 
 
 class DemoWidget(QtGui.QWidget):

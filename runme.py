@@ -7,7 +7,7 @@ import multiprocessing
 import signal
 
 from demo_app import run_app
-from backend import run_backend
+from demo_backend import run_backend
 from utils import generate_certificates
 
 
