@@ -22,8 +22,10 @@ class BackendProxy(object):
     PORT = '5556'
     SERVER = "tcp://localhost:%s" % PORT
 
-    POLL_TIMEOUT = 1000  # ms
+    POLL_TIMEOUT = 4000  # ms
     POLL_TRIES = 3
+
+    PING_INTERVAL = 2  # secs
 
     def __init__(self):
         self._socket = None

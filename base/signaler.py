@@ -20,7 +20,7 @@ class Signaler(object):
     PORT = "5667"
     SERVER = "tcp://localhost:%s" % PORT
 
-    POLL_TIMEOUT = 1000  # ms
+    POLL_TIMEOUT = 4000  # ms
     POLL_TRIES = 3
 
     def __init__(self):
