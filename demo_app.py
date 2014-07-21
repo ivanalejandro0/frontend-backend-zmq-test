@@ -65,19 +65,18 @@ class DemoWidget(QtGui.QWidget):
         pb_test5.clicked.connect(self._call_twice_02)
 
         # define layout
-        hbox = QtGui.QHBoxLayout()
-        hbox.addStretch(1)
-        hbox.addWidget(pb_test1)
-        hbox.addWidget(pb_test2)
-        hbox.addWidget(pb_test3)
-        hbox.addWidget(pb_test4)
-        hbox.addWidget(pb_test5)
+        box = QtGui.QGridLayout()
+        box.addWidget(pb_test1, 0, 0)
+        box.addWidget(pb_test2, 0, 1)
+        box.addWidget(pb_test3, 0, 2)
+        box.addWidget(pb_test4, 0, 3)
+        box.addWidget(pb_test5, 0, 4)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addStretch(1)
         vbox.addLayout(hbox)
 
-        self.setLayout(vbox)
+        self.setLayout(box)
 
         # resize window
         self.setGeometry(300, 300, 250, 150)
