@@ -7,7 +7,7 @@ import time
 
 import zmq
 
-from api import API, STOP_REQUEST
+from api import API, STOP_REQUEST, PING_REQUEST
 from certificates import get_backend_certificates
 from utils import get_log_handler
 
@@ -49,6 +49,9 @@ class BackendProxy(object):
         socket.connect(self.SERVER)
         self._socket = socket
 
+        self._ping_at = 0
+        self.online = False
+
         self._call_queue = Queue.Queue()
         self._worker_caller = threading.Thread(target=self._worker)
         self._worker_caller.start()
@@ -69,8 +72,25 @@ class BackendProxy(object):
             except Queue.Empty:
                 pass
             time.sleep(0.01)
+            self._ping()
 
         logger.debug("BackendProxy worker stopped.")
+
+    def _reset_ping(self):
+        """
+        Reset the ping timeout counter.
+        This is called for every ping and request.
+        """
+        self._ping_at = time.time() + self.PING_INTERVAL
+
+    def _ping(self):
+        """
+        Heartbeat helper.
+        Sends a PING request just to know that the server is alive.
+        """
+        if time.time() > self._ping_at:
+            self._send_request(PING_REQUEST)
+            self._reset_ping()
 
     def _api_call(self, *args, **kwargs):
         """
@@ -143,9 +163,13 @@ class BackendProxy(object):
         if reply is None:
             msg = "Timeout error contacting backend."
             logger.critical(msg)
+            self.online = False
         else:
             msg = "Received reply for '{0}' -> '{1}'".format(request, reply)
             logger.debug(msg)
+            self.online = True
+            # request received, no ping needed for other interval.
+            self._reset_ping()
 
     def __getattribute__(self, name):
         """

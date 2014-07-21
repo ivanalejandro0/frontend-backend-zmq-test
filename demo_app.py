@@ -4,7 +4,7 @@ import sys
 import signal
 import time
 
-from PySide import QtGui
+from PySide import QtCore, QtGui
 
 # do this import after *any* other custom import so the logger gets set.
 from utils import get_log_handler
@@ -72,15 +72,20 @@ class DemoWidget(QtGui.QWidget):
         box.addWidget(pb_test4, 0, 3)
         box.addWidget(pb_test5, 0, 4)
 
-        vbox = QtGui.QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addLayout(hbox)
+        # add label
+        self.lbl_backend_status = QtGui.QLabel('Backend status: ...')
+        box.addWidget(self.lbl_backend_status, 1, 0)
 
         self.setLayout(box)
 
         # resize window
         self.setGeometry(300, 300, 250, 150)
         self.setWindowTitle('Test window')
+
+        # periodically check if the backend is alive
+        timer = QtCore.QTimer(self)
+        timer.timeout.connect(self.update_backend_status)
+        timer.start(2000)
 
     def closeEvent(self, e):
         """
@@ -92,6 +97,18 @@ class DemoWidget(QtGui.QWidget):
         time.sleep(0.05)  # give the thread a little time to finish.
 
         QtGui.QWidget.closeEvent(self, e)
+
+    def update_backend_status(self):
+        online = self._backend_proxy.online
+
+        msg = 'Backend status: '
+
+        if online:
+            msg += '<span style="color: green">ON</span>'
+        else:
+            msg += '<span style="color: red">OFF</span>'
+
+        self.lbl_backend_status.setText(msg)
 
     ####################
     # Backend calls, on buttons clicked

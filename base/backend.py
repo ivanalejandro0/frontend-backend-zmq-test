@@ -11,7 +11,7 @@ from zmq.auth.thread import ThreadAuthenticator
 
 from signaler import Signaler
 
-from api import API
+from api import API, PING_REQUEST
 from certificates import get_backend_certificates
 from utils import get_log_handler
 
@@ -133,6 +133,10 @@ class Backend(object):
         :param request_json: a json specification of a request.
         :type request_json: str
         """
+        if request_json == PING_REQUEST:
+            # do not process request if it's just a ping
+            return
+
         try:
             # request = zmq.utils.jsonapi.loads(request_json)
             # We use stdlib's json to ensure that we get unicode strings
